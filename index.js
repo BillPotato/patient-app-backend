@@ -77,18 +77,14 @@ app.post("/api/create", async (request, response, next) => {
             // 2. The result object is the same, you still access 'data'
             console.log('Event created: %s', result.data.htmlLink);
 
-            // 3. You can now send a proper response
-            response.status(201).json({
-                message: "Event created successfully!",
-                link: result.data.htmlLink
-        });
 
-    } catch (error) {
-        console.log('Error contacting the Calendar service:', error);
-        next(error); // Pass error to your handler
-    }
+        } catch (error) {
+            console.log('Error contacting the Calendar service:', error);
+            next(error); // Pass error to your handler
+        }
     }
 
+    response.status(201).json({"status": "success"})
     
 })
 
