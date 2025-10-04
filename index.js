@@ -25,9 +25,8 @@ app.use(morgan(":method :url :status :res[content-length] - :response-time ms :b
 
 // _______________________________________
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar']
-const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials/credentials.json')
-
+const SCOPES = ['https://www.googleapis.com/auth/calendar.events']
+const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials/keys.json')
 
 
 // Create a new Calendar API client.
@@ -37,11 +36,11 @@ const event = {
   'summary': 'Google I/O 2015',
   'description': 'A chance to hear more about Google\'s developer products.',
   'start': {
-    'dateTime': '2025-10-04T09:00:00-07:00',
+    'dateTime': '2025-10-04T09:00:00',
     'timeZone': 'America/New_York',
   },
   'end': {
-    'dateTime': '2025-10-04T10:00:00-07:00',
+    'dateTime': '2025-10-04T10:00:00',
     'timeZone': 'America/New_York',
   },
   'recurrence': [
@@ -56,29 +55,38 @@ const event = {
   },
 };
 
-
-
-app.post("/api/parser", async (request, response, next) => {
-
-    const auth = await authenticate({
+app.post("/api/create", async (request, response, next) => {
+    const auth = new google.auth.GoogleAuth({
+        keyFile: CREDENTIALS_PATH,
         scopes: SCOPES,
-        keyfilePath: CREDENTIALS_PATH,
     });
 
     const calendar = google.calendar({version: 'v3', auth});
 
-    calendar.events.insert({
-        auth: auth,
-        calendarId: 'primary',
-        resource: event,
-    }, function(err, event) {
-    if (err) {
-        console.log('There was an error contacting the Calendar service: ' + err);
-        return;
+    try {
+        // 1. Use 'await' - it's much cleaner
+        const result = await calendar.events.insert({
+            calendarId: 'biuchutnu@gmail.com',
+            resource: event,
+        });
+
+        // 2. The result object is the same, you still access 'data'
+        console.log('Event created: %s', result.data.htmlLink);
+
+        // 3. You can now send a proper response
+        response.status(201).json({
+            message: "Event created successfully!",
+            link: result.data.htmlLink
+        });
+
+    } catch (error) {
+        console.log('Error contacting the Calendar service:', error);
+        next(error); // Pass error to your handler
     }
-    console.log('Event created: %s', event.htmlLink);
-    });
-    // _______IGNORE
+})
+
+
+app.post("/api/parser", async (request, response, next) => {
     const content = `
       You are an intelligent medical assistant responsible for extracting actionable tasks from patient notes. Your task is to analyze the provided text and identify all medical tasks such as medication schedules, appointments, and symptom monitoring.
 
@@ -104,7 +112,7 @@ app.post("/api/parser", async (request, response, next) => {
     });
     console.log(res.text)
 
-    response.status(200).json(res)
+    await response.status(200).json(res)
 })
 
 
