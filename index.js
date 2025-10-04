@@ -18,7 +18,9 @@ morgan.token("body", (request, response) => {
 	return " "
 })
 
-app.use(cors())
+app.use(cors({
+    origin: "*"
+}))
 app.use(express.json())
 app.use(morgan(":method :url :status :res[content-length] - :response-time ms :body"))
 
@@ -56,6 +58,7 @@ const event = {
 };
 
 app.post("/api/create", async (request, response, next) => {
+    console.log(request)
     const eventsJSON = JSON.parse(request.body.events.replace("\`\`\`", "").replace("\`\`\`", "").replace("json", ""))
     const events = eventsJSON.tasks
 
