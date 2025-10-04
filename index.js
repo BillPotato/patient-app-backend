@@ -58,8 +58,8 @@ const event = {
 };
 
 app.post("/api/create", async (request, response, next) => {
-    console.log(request)
-    const eventsJSON = JSON.parse(request.body.events.replace("\`\`\`", "").replace("\`\`\`", "").replace("json", ""))
+    console.log("Request body: _____", request.data)
+    const eventsJSON = JSON.parse(request.body.events)
     const events = eventsJSON.tasks
 
     const auth = new google.auth.GoogleAuth({
@@ -151,7 +151,7 @@ app.post("/api/parser", async (request, response, next) => {
     });
     console.log(res.text)
 
-    response.status(200).json(res.text)
+    response.status(200).json(res.text.replace("\`\`\`", "").replace("\`\`\`", "").replace("json", ""))
 })
 
 
