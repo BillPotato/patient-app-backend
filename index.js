@@ -58,7 +58,7 @@ const event = {
 };
 
 app.post("/api/create", async (request, response, next) => {
-    console.log("Request body: _____", request.data)
+    console.log("Request body: _____", request.body)
     const eventsJSON = JSON.parse(request.body.events)
     const events = eventsJSON.tasks
 
@@ -138,6 +138,13 @@ app.post("/api/parser", async (request, response, next) => {
             // Some other events here if needed
         ]
     }"
+
+    Task start time and end time should be at least 2 hours apart.
+
+    If the input is plain text, make as many tasks as possible for a whole week. Each day
+     should have one task. Make the time different for each task so they fill the screen. 
+     Make the task names different. Be as diverse as possible. You can create many tasks for one day.
+    If the input is json, create a task for that task only.
 
       Here is the medical text to analyze:
       ---
