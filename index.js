@@ -1,14 +1,13 @@
 require("dotenv").config()
 const express = require("express")
 const morgan = require("morgan")
-const Person = require("./models/Person")
 const cors = require("cors")
+const { GoogleGenAI } = require('@google/genai')
 
 const app = express()
 
 morgan.token("body", (request, response) => {
 	if (request.method == "POST") {
-		// console.log("POST method detected!")
 		return JSON.stringify(request.body)
 	}
 	return " "
@@ -22,9 +21,33 @@ app.use(morgan(":method :url :status :res[content-length] - :response-time ms :b
 // _______________________________________
 
 
-app.post("/api/parser", (request, response, next) => {
-    const content = request.data.content
+app.post("/api/parser", async (request, response, next) => {
+    const content = `
+      You are an intelligent medical assistant responsible for extracting actionable tasks from patient notes. Your task is to analyze the provided text and identify all medical tasks such as medication schedules, appointments, and symptom monitoring.
 
+      Your response MUST be a single, valid JSON object. Do not include any text or explanations before or after the JSON object.
+
+      The JSON object should have a single key, "tasks", which contains a list of task objects. Each task object in the list must conform to the following schema:
+
+      - "task_type": (String) Must be one of: "MEDICATION", "APPOINTMENT", "SYMPTOM_TRACKING", "TESTING", "LIFESTYLE".
+      - "summary": (String) A brief, clear summary of the task for a calendar event title.
+      - "details": (String) A more detailed description of the task.
+      - "frequency": (String) How often the task should occur. e.g., "Once daily", "In 2 weeks".
+      - "duration_days": (Integer) For how many days the task should continue. Use 1 for one-time events, -1 for indefinite.
+
+      Here is the medical text to analyze:
+      ---
+      ${request.body.content}
+      ---
+    `
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_KEY })
+    const res = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: content,
+    });
+    console.log(res.text)
+
+    response.status(200).json(res)
 })
 
 
