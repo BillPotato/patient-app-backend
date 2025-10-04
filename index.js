@@ -3,6 +3,11 @@ const express = require("express")
 const morgan = require("morgan")
 const cors = require("cors")
 const { GoogleGenAI } = require('@google/genai')
+// ________ GOOGLE CAL ___________
+const path = require("node:path")
+const process =require("node:process")   
+const {authenticate} = require("@google-cloud/local-auth")
+const {google} = require("googleapis")
 
 const app = express()
 
@@ -20,8 +25,60 @@ app.use(morgan(":method :url :status :res[content-length] - :response-time ms :b
 
 // _______________________________________
 
+const SCOPES = ['https://www.googleapis.com/auth/calendar']
+const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials/credentials.json')
+
+
+
+// Create a new Calendar API client.
+
+
+const event = {
+  'summary': 'Google I/O 2015',
+  'description': 'A chance to hear more about Google\'s developer products.',
+  'start': {
+    'dateTime': '2025-10-04T09:00:00-07:00',
+    'timeZone': 'America/New_York',
+  },
+  'end': {
+    'dateTime': '2025-10-04T10:00:00-07:00',
+    'timeZone': 'America/New_York',
+  },
+  'recurrence': [
+    'RRULE:FREQ=WEEKLY;BYDAY=MO'
+  ],
+  'reminders': {
+    'useDefault': false,
+    'overrides': [
+      {'method': 'email', 'minutes': 24 * 60},
+      {'method': 'popup', 'minutes': 10},
+    ],
+  },
+};
+
+
 
 app.post("/api/parser", async (request, response, next) => {
+
+    const auth = await authenticate({
+        scopes: SCOPES,
+        keyfilePath: CREDENTIALS_PATH,
+    });
+
+    const calendar = google.calendar({version: 'v3', auth});
+
+    calendar.events.insert({
+        auth: auth,
+        calendarId: 'primary',
+        resource: event,
+    }, function(err, event) {
+    if (err) {
+        console.log('There was an error contacting the Calendar service: ' + err);
+        return;
+    }
+    console.log('Event created: %s', event.htmlLink);
+    });
+    // _______IGNORE
     const content = `
       You are an intelligent medical assistant responsible for extracting actionable tasks from patient notes. Your task is to analyze the provided text and identify all medical tasks such as medication schedules, appointments, and symptom monitoring.
 
