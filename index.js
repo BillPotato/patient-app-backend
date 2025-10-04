@@ -56,6 +56,9 @@ const event = {
 };
 
 app.post("/api/create", async (request, response, next) => {
+    const eventsJSON = JSON.parse(request.body.events.replace("\`\`\`", "").replace("\`\`\`", "").replace("json", ""))
+    const events = eventsJSON.tasks
+
     const auth = new google.auth.GoogleAuth({
         keyFile: CREDENTIALS_PATH,
         scopes: SCOPES,
@@ -63,42 +66,82 @@ app.post("/api/create", async (request, response, next) => {
 
     const calendar = google.calendar({version: 'v3', auth});
 
-    try {
-        // 1. Use 'await' - it's much cleaner
-        const result = await calendar.events.insert({
-            calendarId: 'biuchutnu@gmail.com',
-            resource: event,
-        });
+    for (let event of events) {
+        try {
+            // 1. Use 'await' - it's much cleaner
+            const result = await calendar.events.insert({
+                calendarId: 'biuchutnu@gmail.com',
+                resource: event,
+            });
 
-        // 2. The result object is the same, you still access 'data'
-        console.log('Event created: %s', result.data.htmlLink);
+            // 2. The result object is the same, you still access 'data'
+            console.log('Event created: %s', result.data.htmlLink);
 
-        // 3. You can now send a proper response
-        response.status(201).json({
-            message: "Event created successfully!",
-            link: result.data.htmlLink
+            // 3. You can now send a proper response
+            response.status(201).json({
+                message: "Event created successfully!",
+                link: result.data.htmlLink
         });
 
     } catch (error) {
         console.log('Error contacting the Calendar service:', error);
         next(error); // Pass error to your handler
     }
+    }
+
+    
 })
 
+// - "task_type": (String) Must be one of: "MEDICATION", "APPOINTMENT", "SYMPTOM_TRACKING", "TESTING", "LIFESTYLE".
+// - "summary": (String) A brief, clear summary of the task for a calendar event title.
+// - "details": (String) A more detailed description of the task.
+// - "frequency": (String) How often the task should occur. e.g., "Once daily", "In 2 weeks".
+// - "duration_days": (Integer) For how many days the task should continue. Use 1 for one-time events, -1 for indefinite. 
 
 app.post("/api/parser", async (request, response, next) => {
     const content = `
       You are an intelligent medical assistant responsible for extracting actionable tasks from patient notes. Your task is to analyze the provided text and identify all medical tasks such as medication schedules, appointments, and symptom monitoring.
 
-      Your response MUST be a single, valid JSON object. Do not include any text or explanations before or after the JSON object.
+      Your response MUST be a single, plain-text valid JSON object. Do not include any text or explanations before or after the JSON object.
 
-      The JSON object should have a single key, "tasks", which contains a list of task objects. Each task object in the list must conform to the following schema:
+      The JSON object should have a single key, "tasks", which contains a list of task objects. Each task object in the list must look like the following JSON object:
 
-      - "task_type": (String) Must be one of: "MEDICATION", "APPOINTMENT", "SYMPTOM_TRACKING", "TESTING", "LIFESTYLE".
-      - "summary": (String) A brief, clear summary of the task for a calendar event title.
-      - "details": (String) A more detailed description of the task.
-      - "frequency": (String) How often the task should occur. e.g., "Once daily", "In 2 weeks".
-      - "duration_days": (Integer) For how many days the task should continue. Use 1 for one-time events, -1 for indefinite.
+      Do not include \`\`\`json at the start of your response.
+            
+
+    "{
+        tasks: [
+            {
+                "summary": (String) "Google I/O 2015",
+                "description": (String) "A chance to hear more about Google's developer products.",
+                "start": {
+                    "dateTime": (String - ISO 8601 standard) "2025-10-04T09:00:00",
+                    "timeZone": (String - IANA Time Zone Database) "America/New_York"
+                },
+                "end": {
+                    "dateTime": (String - ISO 8601 standard) "2025-10-04T10:00:00",
+                    "timeZone": (String - IANA Time Zone Database) "America/New_York"
+                },
+                "recurrence": [ (Array of Strings - iCalendar standard)
+                    "RRULE:FREQ=WEEKLY;BYDAY=MO"
+                ],
+                "reminders": {
+                    "useDefault": (boolean) false,
+                    "overrides": [
+                        {
+                            "method": "email",
+                            "minutes": 1440
+                        },
+                        {
+                            "method": "popup",
+                            "minutes": 10
+                        }
+                    ]
+                }
+            },
+            // Some other events here if needed
+        ]
+    }"
 
       Here is the medical text to analyze:
       ---
@@ -112,7 +155,7 @@ app.post("/api/parser", async (request, response, next) => {
     });
     console.log(res.text)
 
-    await response.status(200).json(res)
+    response.status(200).json(res.text)
 })
 
 
