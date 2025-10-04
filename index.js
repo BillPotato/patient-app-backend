@@ -102,7 +102,7 @@ app.post("/api/parser", async (request, response, next) => {
 
       The JSON object should have a single key, "tasks", which contains a list of task objects. Each task object in the list must look like the following JSON object:
 
-      Do not include \`\`\`json at the start of your response.
+      Today is 10/04/2025, so create the dates accordingly.
             
 
     "{
@@ -118,9 +118,6 @@ app.post("/api/parser", async (request, response, next) => {
                     "dateTime": (String - ISO 8601 standard) "2025-10-04T10:00:00",
                     "timeZone": (String - IANA Time Zone Database) "America/New_York"
                 },
-                "recurrence": [ (Array of Strings - iCalendar standard)
-                    "RRULE:FREQ=WEEKLY;BYDAY=MO"
-                ],
                 "reminders": {
                     "useDefault": (boolean) false,
                     "overrides": [
